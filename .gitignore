@@ -1,0 +1,53 @@
+# ── Secrets / local config ─────────────────────────────
+.env
+.env.*
+!.env.example
+.mcp.json
+
+# ── macOS ──────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+
+# ── Xcode / Swift (VoiceInk fork) ──────────────────────
+build/
+DerivedData/
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+.swiftpm/
+Package.resolved
+*.playground
+
+# ── Node (crawlforge MCP / tooling) ────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.log
+
+# ── crawlforge MCP runtime output ──────────────────────
+cache/
+jobs/
+monitors/
+snapshots/
+webhooks/
+
+# ── Editors / IDE ──────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*~
+
+# ── Claude Code local settings ─────────────────────────
+.claude/settings.local.json
