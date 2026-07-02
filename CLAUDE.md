@@ -37,19 +37,27 @@ dependency. Two local models are required: (1) a Whisper-family **ASR** engine f
 - **Min OS:** macOS 14.4+.
 
 ## Current state
-The VoiceInk fork is **not cloned yet**. First real coding step is Phase 0/1 — run `/voiceink-setup`.
-Once cloned, record exact file paths for the customization areas below (PRD §8).
+Fork **cloned** at `VoiceInk/` (nested git repo, git-ignored here; remotes: `origin` =
+mysleekdesigns/VoiceInk, `upstream` = Beingpax/VoiceInk). Exact `file:line` map recorded in PRD §8.
 
-## Where the work lands (mostly config + a few Swift files in the fork)
-- **Injection/output** — confirm/set the type-out (CGEvent per-char) path for the terminal profile.
-- **LLM/enhancement service** — Ollama HTTP call + per-profile prompt (the main customization).
-- **Power Mode** — terminal profile matching + auto-activation.
-- **ASR/model config** — whisper.cpp vs FluidAudio/Parakeet.
-- **Hotkey** (KeyboardShortcuts) — reuse as-is.
+## Where the work lands (exact paths in PRD §8; fork-root-relative)
+- **Injection/output** — ⚠️ upstream has **no type-out mode**; only clipboard Cmd+V
+  (`VoiceInk/Paste/CursorPaster.swift`). Adding CGEvent per-char typing is the main Swift work.
+- **LLM/enhancement service** — Ollama already integrated (`VoiceInk/Services/OllamaService.swift`,
+  endpoint localhost:11434); prompt selection is per-profile (`Modes/ModeRuntimeConfiguration.swift`).
+- **Power Mode** — upstream "Modes" system (`VoiceInk/Modes/ModeConfig.swift`): bundle-ID matching,
+  auto-activation, per-profile `outputMode` + `autoSendKey` overrides already exist.
+- **ASR/model config** — Parakeet TDT v3 already supported (`Transcription/FluidAudio/FluidAudioModelManager.swift`).
+- **Hotkey** (KeyboardShortcuts) — reuse as-is (`VoiceInk/Shortcuts/`); toggle/push-to-talk/hybrid built in.
 
-## Build & run (once the fork is cloned)
-- Open the `.xcodeproj`/`.xcworkspace` in Xcode; let SwiftPM resolve deps (KeyboardShortcuts,
-  whisper.cpp, FluidAudio, MediaRemoteAdapter); build & run (⌘R). Follow the fork's `BUILDING.md`.
+## Build & run
+- Preferred: `make local` in `VoiceInk/` — ad-hoc signing, no Apple Developer cert; app lands in
+  `~/Downloads/VoiceInk.app`. Or open `VoiceInk.xcodeproj` in Xcode (⌘R). See the fork's `BUILDING.md`.
+- whisper.xcframework builds into `~/VoiceInk-Dependencies/whisper.cpp`; its `build-xcframework.sh` is
+  **locally patched to macOS-only** (iOS/tvOS/visionOS slices fail without those SDKs and aren't
+  needed). `make clean` wipes the deps dir and loses that patch — re-apply if rebuilding from scratch.
+- If every compile fails with "No CMAKE_C_COMPILER" / plug-in load errors after an Xcode update, run
+  `sudo xcodebuild -runFirstLaunch`.
 - `xcodebuild -list` to inspect schemes; delegate noisy builds to the `build-doctor` subagent.
 - Grant **Microphone** + **Accessibility** permissions on first run.
 

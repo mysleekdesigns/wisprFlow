@@ -102,16 +102,17 @@ terminal, and **Auto-Send** can press Return to submit the prompt.
 ## 6. Phases & checklists
 
 ### Phase 0 — Prerequisites & environment
-- [ ] Install **Xcode** (latest) and **Homebrew**.
-- [ ] Install **Ollama**; run `ollama serve`; `ollama pull llama3.2:3b`.
-- [ ] Verify `ollama run llama3.2:3b "say hi"` responds.
-- [ ] Have a working **Claude Code** install in a terminal (Terminal.app / iTerm2 / Ghostty / VS Code).
+- [x] Install **Xcode** (latest) and **Homebrew**. *(Xcode 26.6, Homebrew 5.1.15)*
+- [x] Install **Ollama**; run `ollama serve`; `ollama pull llama3.2:3b`. *(running; `llama3.2:latest` = the 3B default, plus `qwen2.5:3b` available)*
+- [x] Verify `ollama run llama3.2:3b "say hi"` responds. *(verified via API 2026-07-02, ~1.8 s incl. model load)*
+- [x] Have a working **Claude Code** install in a terminal (Terminal.app / iTerm2 / Ghostty / VS Code).
 - [ ] (Optional) `brew install --cask voiceink` to trial the shipped app + confirm target UX.
 
 ### Phase 1 — Fork & build the base; validate the RAW loop
-- [ ] Fork **Beingpax/VoiceInk**; `git clone` your fork into this repo.
-- [ ] Follow `BUILDING.md`; open in Xcode; resolve SPM deps (KeyboardShortcuts, whisper.cpp,
-      FluidAudio, MediaRemoteAdapter); build & run.
+- [x] Fork **Beingpax/VoiceInk**; `git clone` your fork into this repo. *(cloned to `VoiceInk/`, `upstream` remote added, 2026-07-02)*
+- [x] Follow `BUILDING.md`; open in Xcode; resolve SPM deps (KeyboardShortcuts, whisper.cpp,
+      FluidAudio, MediaRemoteAdapter); build & run. *(built via `make local` → `~/Downloads/VoiceInk.app`,
+      ad-hoc signed, 2026-07-02; whisper.xcframework patched macOS-only, see CLAUDE.md build notes)*
 - [ ] Grant **Microphone** + **Accessibility** permissions.
 - [ ] Download an ASR model; set the global hotkey.
 - [ ] **Test raw loop** in TextEdit: hotkey → speak → text appears. (No AI layer yet.)
@@ -152,12 +153,36 @@ terminal, and **Auto-Send** can press Return to submit the prompt.
 ---
 
 ## 8. Where the work lands (a fork — mostly config + a few Swift files)
-- [ ] **Injection/output** — confirm/set type-out mode path (CGEvent per-char) for the terminal profile.
-- [ ] **LLM/enhancement service** — Ollama HTTP call + per-profile prompt (main customization).
-- [ ] **Power Mode** — terminal profile matching + auto-activation.
-- [ ] **ASR/model config** — whisper.cpp vs. FluidAudio/Parakeet.
-- [ ] **Hotkey** (KeyboardShortcuts) — reuse as-is.
-- [ ] Identify exact file paths on first read of the cloned repo (fill in here).
+Paths relative to the fork root (`VoiceInk/` in this repo). Mapped 2026-07-02 by `voiceink-explorer`.
+
+- [ ] **Injection/output** — ⚠️ **type-out (CGEvent per-char) mode does NOT exist upstream — it must be
+      added** (the main Swift work). Current paths: clipboard Cmd+V via CGEvent in
+      `VoiceInk/Paste/CursorPaster.swift:179-208` (AppleScript variant `:161-173`; entry
+      `pasteAtCursor()` `:24-31`; method enum `VoiceInk/Paste/PasteMethod.swift:3-43`); delivery
+      orchestration in `VoiceInk/Transcription/Engine/TranscriptionDelivery.swift:150-168`.
+- [ ] **LLM/enhancement service** — Ollama already integrated: `VoiceInk/Services/OllamaService.swift`
+      (endpoint `http://localhost:11434` at `:6`; `enhance()` `:78-103`); provider dispatch
+      `VoiceInk/Services/AIEnhancement/AIEnhancementService.swift:203-224`; prompts =
+      `VoiceInk/Models/CustomPrompt.swift`, stored in UserDefaults `customPrompts`, selected
+      **per profile** via `VoiceInk/Modes/ModeRuntimeConfiguration.swift:97-127` (endpoint/model are
+      global; prompt selection is per-profile). Custom vocabulary auto-injected at
+      `AIEnhancementService.swift:137-149`.
+- [ ] **Power Mode** — upstream calls it **Modes**: `VoiceInk/Modes/ModeConfig.swift:66-253`
+      (per-profile overrides incl. ASR model, prompt UUID, `outputMode` `:23-51`, `autoSendKey` `:3-21`;
+      app matching via bundle-ID `appConfigs` `:227-241`); auto-activation on frontmost-app change in
+      `VoiceInk/Modes/ActiveWindowService.swift:30-60`; runtime resolution
+      `VoiceInk/Modes/ModeRuntimeConfiguration.swift:61-201`.
+- [ ] **ASR/model config** — dual engine, **Parakeet TDT v3 already supported**:
+      `VoiceInk/Transcription/FluidAudio/FluidAudioModelManager.swift:30-39` (`parakeet-tdt-0.6b-v3`);
+      whisper.cpp side `VoiceInk/Transcription/Whisper/WhisperModelManager.swift`; per-profile model at
+      `VoiceInk/Modes/ModeConfig.swift:76`.
+- [x] **Hotkey** (KeyboardShortcuts) — reuse as-is: `VoiceInk/Shortcuts/RecordingShortcutManager.swift`
+      (toggle / push-to-talk / hybrid modes) + global CGEvent tap `VoiceInk/Shortcuts/ShortcutMonitor.swift`.
+- [x] Identify exact file paths on first read of the cloned repo (done — see above). Extras: Auto-Send
+      Return via `VoiceInk/Paste/CursorPaster.swift:218-239` (500 ms after paste,
+      `TranscriptionDelivery.swift:159-167`); custom dictionary =
+      `VoiceInk/Services/CustomVocabularyService.swift`; entitlements have **no App Sandbox** (good);
+      `MACOSX_DEPLOYMENT_TARGET = 14.4`.
 
 ---
 

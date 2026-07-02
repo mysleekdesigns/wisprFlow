@@ -13,6 +13,9 @@ Icon
 .Spotlight-V100
 .Trashes
 
+# ── VoiceInk fork (nested git repo, tracked separately) ─
+VoiceInk/
+
 # ── Xcode / Swift (VoiceInk fork) ──────────────────────
 build/
 DerivedData/
