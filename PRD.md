@@ -132,13 +132,22 @@ terminal, and **Auto-Send** can press Return to submit the prompt.
       notification; warm cleanup ≈ 0.32 s in harness)*
 
 ### Phase 3 — Claude Code / Terminal profile (the core of this project)
-- [ ] Create a **Power Mode profile** that auto-activates for your terminal app(s).
-- [ ] Set that profile's injection to **type-out (keystroke) mode** (avoids paste corruption + bracketed-paste bug).
-- [ ] Give it a **coding-agent enhancement prompt** (§7) — preserve technical terms, file paths, identifiers; no markdown/code fences.
-- [ ] Add a **custom dictionary / word-replacements** for dev jargon ("Claude Code", "npm", "refactor", lib/file names Whisper mishears).
-- [ ] Decide **Auto-Send** per profile (start **off**; test Return-to-submit separately).
-- [ ] Fallback note: if ever using paste mode in the terminal, add the bracketed-paste guard
+- [x] Create a **Power Mode profile** that auto-activates for your terminal app(s). *(2026-07-08:
+      "Claude Code" mode — Terminal, iTerm2, Hyper, Ghostty, VS Code; Cursor deliberately excluded.
+      Written via `scripts/restore_phase3.py` — see §7 Phase 3 findings)*
+- [x] Set that profile's injection to **type-out (keystroke) mode** (avoids paste corruption + bracketed-paste bug).
+      *(2026-07-08: `.typeOut` output mode added to the fork — commit `853a01d`, branch `wisprflow`;
+      5 ms/char, newlines typed as spaces, modifier flags cleared)*
+- [x] Give it a **coding-agent enhancement prompt** (§7) — preserve technical terms, file paths, identifiers; no markdown/code fences.
+      *(2026-07-08: "Claude Code terminal" prompt, "Use System Template" OFF)*
+- [x] Add a **custom dictionary / word-replacements** for dev jargon ("Claude Code", "npm", "refactor", lib/file names Whisper mishears).
+      *(2026-07-08: 17 word-replacement rows — Claude Code, JSON, SwiftUI, CGEvent, … via
+      `scripts/restore_dictionary.py`)*
+- [x] Decide **Auto-Send** per profile (start **off**; test Return-to-submit separately).
+      *(2026-07-08: OFF on both modes; Return-to-submit untested — revisit in Phase 4 if wanted)*
+- [x] Fallback note: if ever using paste mode in the terminal, add the bracketed-paste guard
       (`claude() { command claude "$@"; printf '\e[?2004l'; }` in shell rc).
+      *(documented only — type-out is mandated, guard not installed in `~/.zshrc`)*
 
 ### Phase 4 — Polish & optional extensions
 - [ ] Push-to-talk vs. toggle; start/stop sound; menu-bar status.
@@ -175,16 +184,35 @@ terminal, and **Auto-Send** can press Return to submit the prompt.
 - Warm latency ≈ **0.32 s**/cleanup (target < 1 s); Ollama-down ⇒ raw transcript still pastes
   (`TranscriptionPipeline.swift:151,196-208`), worst-case block = 7 s (`EnhancementTimeoutSeconds`).
 
+**Phase 3 findings (2026-07-08, live end-to-end test in Claude Code):**
+- **All acceptance checks passed**: core flow (hotkey → cleaned instruction typed char-by-char into
+  the Claude Code TUI, no `00~`/corruption, no auto-submit), dictionary correction ("clawed code" →
+  "Claude Code"), Ollama-down fallback (raw transcript still types + warning), and the
+  **airplane-mode test** — the 100%-local invariant is proven.
+- **Type-out mode** = fork commit `853a01d` (branch `wisprflow`): `.typeOut` ModeOutputMode + a
+  per-char CGEvent path in `CursorPaster.swift`. Safety details: newlines typed as **spaces** (a real
+  Return submits the TUI prompt), modifier flags cleared (a still-held hotkey can't produce Ctrl/Cmd
+  control sequences), cancellation-aware, delay clamped (`typeOutCharacterDelay`, default 5 ms/char).
+- ⚠️ **In-app config is fragile across rebuilds**: after an ad-hoc rebuild + Accessibility re-grant,
+  ALL in-app state (custom prompts, modes, dictionary — Phase 2's prompts included) was found wiped.
+  Recreated programmatically: `scripts/restore_phase3.py` (prompts + modes via `defaults`; quit the
+  app first) and `scripts/restore_dictionary.py` (word replacements via sqlite). Re-run these if it
+  happens again.
+- "Claude Code" mode config: outputMode `typeOut`, Auto-Send none, `isTextFormattingEnabled`
+  **false** (upstream `ParagraphFormatter` inserts `\n\n` paragraph breaks — unwanted in a terminal),
+  prompt "Claude Code terminal", model `wispr-cleanup:latest`, five terminal bundle IDs.
+
 ---
 
 ## 8. Where the work lands (a fork — mostly config + a few Swift files)
 Paths relative to the fork root (`VoiceInk/` in this repo). Mapped 2026-07-02 by `voiceink-explorer`.
 
-- [ ] **Injection/output** — ⚠️ **type-out (CGEvent per-char) mode does NOT exist upstream — it must be
-      added** (the main Swift work). Current paths: clipboard Cmd+V via CGEvent in
-      `VoiceInk/Paste/CursorPaster.swift:179-208` (AppleScript variant `:161-173`; entry
-      `pasteAtCursor()` `:24-31`; method enum `VoiceInk/Paste/PasteMethod.swift:3-43`); delivery
-      orchestration in `VoiceInk/Transcription/Engine/TranscriptionDelivery.swift:150-168`.
+- [x] **Injection/output** — ✅ **type-out (CGEvent per-char) mode ADDED 2026-07-08** (fork commit
+      `853a01d`, branch `wisprflow`): `.typeOut` case in `VoiceInk/Modes/ModeConfig.swift`, typing
+      path `CursorPaster.typeOut()` in `VoiceInk/Paste/CursorPaster.swift`, routing in
+      `VoiceInk/Transcription/Engine/TranscriptionDelivery.swift:paste()`. Upstream paste paths
+      unchanged: clipboard Cmd+V via CGEvent (`CursorPaster.swift`), AppleScript variant, method enum
+      `VoiceInk/Paste/PasteMethod.swift`.
 - [ ] **LLM/enhancement service** — Ollama already integrated: `VoiceInk/Services/OllamaService.swift`
       (endpoint `http://localhost:11434` at `:6`; `enhance()` `:78-103`); provider dispatch
       `VoiceInk/Services/AIEnhancement/AIEnhancementService.swift:203-224`; prompts =
