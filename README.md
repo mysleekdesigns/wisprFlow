@@ -124,6 +124,9 @@ If every compile fails with `No CMAKE_C_COMPILER` or plug-in load errors (typica
 Xcode update), run `sudo xcodebuild -runFirstLaunch` and retry.
 
 Alternatively, open `VoiceInk.xcodeproj` in Xcode and hit ⌘R — see the fork's `BUILDING.md`.
+Note that plain Xcode builds don't set the `LOCAL_BUILD` flag, so the fork's local-build
+guards (including the one that stops Sparkle from offering upstream updates that would
+replace the fork) are inactive — prefer `make local`.
 
 ### 5. First launch — permissions, ASR model, hotkey
 
@@ -206,11 +209,11 @@ mode on** → the entire flow still works. That last test is the point of the pr
 
 ## Rebuilding / updating
 
-Pull and re-run `make local`. **Decline any in-app "Update Available" prompt**: local builds
-still carry upstream's Sparkle auto-updater pointed at the Beingpax release feed, so accepting
-would replace the fork with stock upstream VoiceInk (no type-out mode). Turn off "check for
-updates automatically" in the app's settings after first launch. Two more things commonly
-break after a rebuild:
+Pull and re-run `make local` — local builds never self-update: the fork gates upstream's
+Sparkle auto-updater behind the `LOCAL_BUILD` flag that `make local` sets, so the updater
+never starts and the "Check for Updates" buttons stay disabled. (If you are still running an
+older local build, decline any "Update Available" prompt — accepting would replace the fork
+with stock upstream VoiceInk.) Two things commonly break after a rebuild:
 
 - **Accessibility grant is invalidated** by ad-hoc re-signing. Toggling the checkbox is not
   enough — remove VoiceInk with the "−" button in System Settings → Accessibility and re-add
