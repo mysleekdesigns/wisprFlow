@@ -54,7 +54,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "osascript -e 'display notification \"Claude Code needs your attention\" with title \"wisprFlow\"'"
+            "command": "/opt/homebrew/bin/terminal-notifier -title \"wisprFlow\" -message \"Claude Code needs your attention\" -activate com.todesktop.230313mzl4w4u92"
           }
         ]
       }
