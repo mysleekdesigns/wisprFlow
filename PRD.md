@@ -122,9 +122,14 @@ terminal, and **Auto-Send** can press Return to submit the prompt.
       2026-07-08 — left ⌥ hold → speak → release, text pasted at cursor)*
 
 ### Phase 2 — Wire the local Ollama cleanup layer
-- [ ] In AI-enhancement settings: provider = **Ollama**, endpoint `http://localhost:11434`, model = pulled model.
-- [ ] Add the **light-touch** cleanup prompt (§7).
-- [ ] Test filler-heavy sentence → cleaned output, **fully offline**; confirm cleanup < ~1s.
+- [x] In AI-enhancement settings: provider = **Ollama**, endpoint `http://localhost:11434`, model = pulled model.
+      *(2026-07-08: model = `wispr-cleanup:latest` — see §7 Phase 2 findings; set via AI Models → Local → Ollama row)*
+- [x] Add the **light-touch** cleanup prompt (§7). *(2026-07-08: "Light cleanup" prompt on the Dictation
+      mode + "Claude Code terminal" prompt created for Phase 3 — both with "Use System Template" OFF;
+      cleanup verified live in TextEdit)*
+- [x] Test filler-heavy sentence → cleaned output, **fully offline**; confirm cleanup < ~1s. *(2026-07-08:
+      live TextEdit test passed; Ollama-down test passed — raw transcript still pastes with warning
+      notification; warm cleanup ≈ 0.32 s in harness)*
 
 ### Phase 3 — Claude Code / Terminal profile (the core of this project)
 - [ ] Create a **Power Mode profile** that auto-activates for your terminal app(s).
