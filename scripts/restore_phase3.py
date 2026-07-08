@@ -21,6 +21,15 @@ def defaults_write_data(key, obj):
     hexdata = json.dumps(obj, ensure_ascii=False).encode("utf-8").hex()
     subprocess.run(["defaults", "write", DOMAIN, key, "-data", hexdata], check=True)
 
+# --- 0. preflight: abort before writing anything ---
+raw = subprocess.run(["defaults", "export", DOMAIN, "-"], check=True, capture_output=True).stdout
+plist = plistlib.loads(raw)
+if "modeConfigurationsV2" not in plist:
+    sys.exit("FATAL: no modes found - launch VoiceInk and complete onboarding first")
+modes = json.loads(plist["modeConfigurationsV2"])
+assert any(m["name"] == "Dictation" for m in modes), "Dictation mode missing - aborting"
+assert not any(m["name"] == "Claude Code" for m in modes), "Claude Code mode already exists - aborting"
+
 # --- 1. customPrompts ---
 prompts = [
     {"id": LIGHT_ID, "title": "Light cleanup", "promptText": GENERAL_PROMPT,
@@ -32,11 +41,6 @@ defaults_write_data("customPrompts", prompts)
 print("customPrompts written:", LIGHT_ID, CLAUDE_ID)
 
 # --- 2. modeConfigurationsV2: attach prompt to Dictation, append Claude Code mode ---
-raw = subprocess.run(["defaults", "export", DOMAIN, "-"], check=True, capture_output=True).stdout
-modes = json.loads(plistlib.loads(raw)["modeConfigurationsV2"])
-assert any(m["name"] == "Dictation" for m in modes), "Dictation mode missing - aborting"
-assert not any(m["name"] == "Claude Code" for m in modes), "Claude Code mode already exists - aborting"
-
 for m in modes:
     if m["name"] == "Dictation":
         m["selectedPrompt"] = LIGHT_ID
@@ -102,9 +106,9 @@ db_path = Path.home() / "Library/Application Support/com.prakashjoshipax.VoiceIn
 con = sqlite3.connect(db_path)
 cur = con.cursor()
 cur.execute("PRAGMA wal_checkpoint(TRUNCATE)")
-row = cur.execute("SELECT Z_ENT, Z_MAX FROM Z_PRIMARYKEYTABLE WHERE Z_NAME='WordReplacement'").fetchone()
+row = cur.execute("SELECT Z_ENT, Z_MAX FROM Z_PRIMARYKEY WHERE Z_NAME='WordReplacement'").fetchone()
 if row is None:
-    sys.exit("FATAL: WordReplacement entity not found in Z_PRIMARYKEYTABLE")
+    sys.exit("FATAL: WordReplacement entity not found in Z_PRIMARYKEY")
 z_ent, z_max = row
 existing = cur.execute("SELECT COUNT(*) FROM ZWORDREPLACEMENT").fetchone()[0]
 print(f"dictionary.store: Z_ENT={z_ent}, Z_MAX={z_max}, existing rows={existing}")
@@ -117,7 +121,7 @@ for original, replacement in REPLACEMENTS:
         "VALUES (?,?,1,1,?,?,?,?)",
         (pk, z_ent, now_coredata, original, replacement, uuid.uuid4().bytes),
     )
-cur.execute("UPDATE Z_PRIMARYKEYTABLE SET Z_MAX=? WHERE Z_NAME='WordReplacement'", (pk,))
+cur.execute("UPDATE Z_PRIMARYKEY SET Z_MAX=? WHERE Z_NAME='WordReplacement'", (pk,))
 con.commit()
 count = cur.execute("SELECT COUNT(*) FROM ZWORDREPLACEMENT WHERE ZISENABLED=1").fetchone()[0]
 con.close()
