@@ -134,7 +134,11 @@ terminal, and **Auto-Send** can press Return to submit the prompt.
 ### Phase 3 — Claude Code / Terminal profile (the core of this project)
 - [x] Create a **Power Mode profile** that auto-activates for your terminal app(s). *(2026-07-08:
       "Claude Code" mode — Terminal, iTerm2, Hyper, Ghostty, VS Code; Cursor deliberately excluded.
-      Written via `scripts/restore_phase3.py` — see §7 Phase 3 findings)*
+      Written via `scripts/restore_phase3.py` — see §7 Phase 3 findings. **Reversed 2026-07-08 pm:
+      Cursor added** (`com.todesktop.230313mzl4w4u92`) — Phase 4 verify caught Claude Code actually
+      running in Cursor's terminal, where dictation silently fell through to the Dictation profile's
+      paste path. Trade-off accepted: Cursor's editor panes now get type-out too. Restore script
+      updated to match.)*
 - [x] Set that profile's injection to **type-out (keystroke) mode** (avoids paste corruption + bracketed-paste bug).
       *(2026-07-08: `.typeOut` output mode added to the fork — commit `853a01d`, branch `wisprflow`;
       5 ms/char, newlines typed as spaces, modifier flags cleared)*
@@ -213,7 +217,8 @@ terminal, and **Auto-Send** can press Return to submit the prompt.
   happens again.
 - "Claude Code" mode config: outputMode `typeOut`, Auto-Send none, `isTextFormattingEnabled`
   **false** (upstream `ParagraphFormatter` inserts `\n\n` paragraph breaks — unwanted in a terminal),
-  prompt "Claude Code terminal", model `wispr-cleanup:latest`, five terminal bundle IDs.
+  prompt "Claude Code terminal", model `wispr-cleanup:latest`, six terminal bundle IDs (Cursor
+  added 2026-07-08 pm — see the Phase 3 checklist note).
 
 **Phase 4 prep findings (2026-07-08, read-only fan-out: latency / interaction polish / command words):**
 - **Phase 4 is almost entirely config-only.** Hotkey mode (toggle / push-to-talk / hybrid — currently
@@ -291,15 +296,26 @@ Paths relative to the fork root (`VoiceInk/` in this repo). Mapped 2026-07-02 by
 ---
 
 ## 10. Acceptance criteria / end-to-end verification
-- [ ] `ollama run llama3.2:3b "hi"` responds (Ollama up).
-- [ ] App builds in Xcode, launches, permissions granted.
-- [ ] **In a live Claude Code session:** focus the terminal, hold hotkey, say
+All PASSED 2026-07-08 pm (`/verify-pipeline` full run, live in Claude Code inside Cursor's terminal;
+per-item evidence from the app's SwiftData history + unified log):
+- [x] `ollama run llama3.2:3b "hi"` responds (Ollama up). *(generation verified via API)*
+- [x] App builds in Xcode, launches, permissions granted. *(running from `/Applications/VoiceInk.app`
+      after Simon moved it — grants survived the move)*
+- [x] **In a live Claude Code session:** focus the terminal, hold hotkey, say
       *"um can you refactor the auth module and add tests"* → the cleaned instruction is **typed** into
-      the Claude Code input (no `00~`, no corruption), ready to send.
-- [ ] Terminal profile auto-activated (type-out mode) without manual switching.
-- [ ] Custom-vocab test: a mis-heard dev term is corrected via the dictionary.
-- [ ] Stop Ollama → raw transcript still injects (ASR independent of LLM).
-- [ ] **Airplane mode** on → whole flow still works (proves 100% local, unlike native `/voice`).
+      the Claude Code input (no `00~`, no corruption), ready to send. *(received byte-exact; ASR 0.13 s
+      + cleanup 0.28 s)*
+- [x] Terminal profile auto-activated (type-out mode) without manual switching. *(history rows show
+      mode "Claude Code" + prompt "Claude Code terminal" — after adding Cursor's bundle ID; the first
+      attempt silently fell through to the Dictation profile's paste path, see the Phase 3 note)*
+- [x] Custom-vocab test: a mis-heard dev term is corrected via the dictionary. *("Claude Code",
+      "SwiftUI", "JSON" all correct; new mishearing "UmClon/clon code" found live and added to the
+      dictionary + restore script)*
+- [x] Stop Ollama → raw transcript still injects (ASR independent of LLM). *(raw typed; history row
+      records "Enhancement failed: Could not connect to the server." + warning notification)*
+- [x] **Airplane mode** on → whole flow still works (proves 100% local, unlike native `/voice`).
+      *(airportd log: Wi-Fi off 17:51:44 → dictation WITH 0.27 s Ollama cleanup at 17:52:05 → Wi-Fi
+      on 17:52:20 — full pipeline incl. LLM ran offline over loopback)*
 
 ---
 

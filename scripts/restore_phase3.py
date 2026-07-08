@@ -48,6 +48,7 @@ TERMINALS = [
     ("co.zeit.hyper", "Hyper"),
     ("com.mitchellh.ghostty", "Ghostty"),
     ("com.microsoft.VSCode", "Visual Studio Code"),
+    ("com.todesktop.230313mzl4w4u92", "Cursor"),
 ]
 claude_mode = {
     "id": str(uuid.uuid4()).upper(),

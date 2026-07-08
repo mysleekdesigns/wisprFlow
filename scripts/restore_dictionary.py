@@ -5,7 +5,7 @@ import sqlite3, time, uuid
 from pathlib import Path
 
 REPLACEMENTS = [
-    ("cloud code, clod code, clawed code, claud code", "Claude Code"),
+    ("cloud code, clod code, clawed code, claud code, clon code, umclon code", "Claude Code"),
     ("voice ink, voice inc", "VoiceInk"),
     ("oh llama, o llama, olama", "Ollama"),
     ("whisper cpp, whisper c p p", "whisper.cpp"),
@@ -18,7 +18,7 @@ REPLACEMENTS = [
     ("java script", "JavaScript"),
     ("swift ui, swift you eye, swift u i", "SwiftUI"),
     ("local host", "localhost"),
-    ("c g event, see gee event", "CGEvent"),
+    ("c g event, see gee event, cg event", "CGEvent"),
     ("re factor", "refactor"),
     ("ghost tea, ghosty", "Ghostty"),
     ("wispr flow, whisper flow", "wisprFlow"),
