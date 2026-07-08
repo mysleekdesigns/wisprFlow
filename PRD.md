@@ -202,6 +202,28 @@ terminal, and **Auto-Send** can press Return to submit the prompt.
   **false** (upstream `ParagraphFormatter` inserts `\n\n` paragraph breaks — unwanted in a terminal),
   prompt "Claude Code terminal", model `wispr-cleanup:latest`, five terminal bundle IDs.
 
+**Phase 4 prep findings (2026-07-08, read-only fan-out: latency / interaction polish / command words):**
+- **Phase 4 is almost entirely config-only.** Hotkey mode (toggle / push-to-talk / hybrid — currently
+  **hybrid**: hold = PTT, tap <0.5 s = hands-free; picker in Settings → Shortcuts, logic
+  `Shortcuts/RecordingShortcutManager.swift:384-462`, threshold hardcoded at `:359`) and start/stop
+  sounds (ON by default, sound5/sound6, `SoundManager.swift:36-49`, Settings → Custom Sounds) both
+  exist upstream. Only real gap: the menu-bar icon is static (`VoiceInk.swift:355-362`) — a
+  recording-state badge would be a small optional Swift edit reacting to `VoiceInkEngine.recordingState`.
+- **Latency: keep Parakeet-TDT v3 on ANE** (already active on both modes; only model on disk; VAD off /
+  16 kHz native / greedy decode already optimal). Best win: **enable `PrewarmModelOnWake`** (unset =
+  OFF today; gate `Services/ModelPrewarmService.swift:104`) — without it the ANE model loads lazily on
+  the *first* dictation. Per-utterance ASR compute time is persisted to SwiftData and shown in
+  History/Dashboard (`TranscriptionPipeline.swift:103-148`), not os_log — use it for a 5×-median
+  measurement of a fixed 10-word sentence, warm.
+- **Command words (all optional):** "send it" is small + safe — auto-send already works in type-out
+  mode (`Modes/ModeConfig.swift:47-49`: `usesPasteOptions` includes `.typeOut`; keystroke path
+  `CursorPaster.performAutoSend` at `CursorPaster.swift:279-300`); needs only trailing-phrase strip +
+  a one-shot `autoSendKey` override. "new line" **deferred**: the only terminal-agnostic soft newline
+  is backslash+Return (Shift/Option+Return are terminal-keymap-dependent), and every variant posts a
+  real Return — a misfire submits the TUI prompt. Streaming injection **deferred** (large): local
+  partials already exist (`Transcription/Streaming/FluidAudioStreamingProvider.swift`, Parakeet only)
+  but feed a preview overlay; typing partials would require backspacing already-typed TUI text.
+
 ---
 
 ## 8. Where the work lands (a fork — mostly config + a few Swift files)
