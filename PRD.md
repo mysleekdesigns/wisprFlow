@@ -113,9 +113,13 @@ terminal, and **Auto-Send** can press Return to submit the prompt.
 - [x] Follow `BUILDING.md`; open in Xcode; resolve SPM deps (KeyboardShortcuts, whisper.cpp,
       FluidAudio, MediaRemoteAdapter); build & run. *(built via `make local` → `~/Downloads/VoiceInk.app`,
       ad-hoc signed, 2026-07-02; whisper.xcframework patched macOS-only, see CLAUDE.md build notes)*
-- [ ] Grant **Microphone** + **Accessibility** permissions.
-- [ ] Download an ASR model; set the global hotkey.
-- [ ] **Test raw loop** in TextEdit: hotkey → speak → text appears. (No AI layer yet.)
+- [x] Grant **Microphone** + **Accessibility** permissions. *(granted via onboarding 2026-07-08; mic =
+      Studio Display. ⚠️ ad-hoc rebuilds invalidate the Accessibility grant — remove with “−” and re-add
+      in System Settings, toggling alone isn’t enough)*
+- [x] Download an ASR model; set the global hotkey. *(parakeet-tdt-0.6b-v3 on disk at
+      `~/Library/Application Support/FluidAudio/Models/`; hotkey = left ⌥, modifier-only, 2026-07-08)*
+- [x] **Test raw loop** in TextEdit: hotkey → speak → text appears. (No AI layer yet.) *(passed
+      2026-07-08 — left ⌥ hold → speak → release, text pasted at cursor)*
 
 ### Phase 2 — Wire the local Ollama cleanup layer
 - [ ] In AI-enhancement settings: provider = **Ollama**, endpoint `http://localhost:11434`, model = pulled model.
@@ -149,6 +153,22 @@ terminal, and **Auto-Send** can press Return to submit the prompt.
 > and capitalization only. **Do NOT** rephrase, summarize, translate to prose, or add markdown/code
 > fences. **Preserve** technical terms, file paths, command names, and identifiers exactly as heard.
 > Output ONLY the cleaned instruction.
+
+**Phase 2 findings (2026-07-08, 11-fixture harness × {qwen2.5:3b, llama3.2} × {wrapped, raw} prompts):**
+- **Model = `wispr-cleanup`** — derived local model (`FROM qwen2.5:3b` + `PARAMETER temperature 0.2`),
+  created with `ollama create wispr-cleanup`; scores **10/11** vs 8–9/11 stock qwen2.5:3b and 5–8/11
+  llama3.2. Needed because LLMkit's `OllamaClient.generate()` puts `temperature` at the **top level**
+  of the `/api/generate` body where Ollama ignores it (only `options.temperature` counts) — the app's
+  intended 0.3 never reaches the model, so we bake 0.2 into the model instead. Zero Swift changes.
+- **Prompts: turn OFF "use system instructions"** (toggle in the prompt editor) — VoiceInk's wrapper
+  template (`Models/AIPrompts.swift`) degrades small models: llama3.2 obeyed an embedded prompt
+  injection (wrote a poem) and once returned the wrapper's own example text; qwen added stray
+  newlines. The raw §7 prompts above perform best; do not "improve" them (a verbatim-phrase addition
+  made the model reject input outright).
+- Residual known-miss (accepted): a dictation *quoting* an instruction-like phrase may get
+  re-punctuated so the phrase reads as a separate sentence — safe failure, never hijacked.
+- Warm latency ≈ **0.32 s**/cleanup (target < 1 s); Ollama-down ⇒ raw transcript still pastes
+  (`TranscriptionPipeline.swift:151,196-208`), worst-case block = 7 s (`EnhancementTimeoutSeconds`).
 
 ---
 

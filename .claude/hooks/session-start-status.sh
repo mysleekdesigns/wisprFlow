@@ -17,8 +17,9 @@ else
 fi
 
 # VoiceInk fork presence
-if ls "$PROJECT_DIR"/*.xcodeproj >/dev/null 2>&1 \
-   || ls "$PROJECT_DIR"/*.xcworkspace >/dev/null 2>&1 \
+if ls -d "$PROJECT_DIR"/*.xcodeproj >/dev/null 2>&1 \
+   || ls -d "$PROJECT_DIR"/*/*.xcodeproj >/dev/null 2>&1 \
+   || ls -d "$PROJECT_DIR"/*.xcworkspace >/dev/null 2>&1 \
    || [ -f "$PROJECT_DIR/Package.swift" ]; then
   echo "- VoiceInk fork: present"
 else
