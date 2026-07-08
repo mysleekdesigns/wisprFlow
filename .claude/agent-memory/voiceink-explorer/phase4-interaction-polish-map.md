@@ -153,6 +153,12 @@ Upstream **already implements** start/stop feedback sounds. Configurable per-use
 
 ## 3. Menu-Bar Status Icon
 
+> **UPDATE 2026-07-08 pm:** the static-icon gap below is now closed in the fork — new
+> `VoiceInk/Views/MenuBarStatusLabel.swift` observes `engine.recordingState` and swaps the label
+> (starting/recording → `record.circle.fill`, transcribing/enhancing/busy → `waveform`, idle →
+> upstream "menuBarIcon" asset); the MenuBarExtra label in `VoiceInk.swift` is now the one-liner
+> `MenuBarStatusLabel(engine: engine)`. Sections below describe upstream as-was.
+
 ### Overview
 Menu-bar icon uses SwiftUI's **MenuBarExtra**. Static icon; dropdown menu shows current mode + actions. **No animated state change** to icon itself during recording/transcribing/enhancing.
 

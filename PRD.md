@@ -150,9 +150,22 @@ terminal, and **Auto-Send** can press Return to submit the prompt.
       *(documented only — type-out is mandated, guard not installed in `~/.zshrc`)*
 
 ### Phase 4 — Polish & optional extensions
-- [ ] Push-to-talk vs. toggle; start/stop sound; menu-bar status.
-- [ ] Tune ASR choice for lowest latency on your machine.
-- [ ] (Optional) Command words ("new line", "send it"), streaming/partial transcripts.
+- [x] Push-to-talk vs. toggle; start/stop sound; menu-bar status. *(2026-07-08 pm: hotkey stays
+      **hybrid** (hold = PTT, tap <0.5 s = hands-free) and start/stop sounds already ON — both
+      config-only, nothing to change. **Menu-bar recording-state badge added to the fork**:
+      new `Views/MenuBarStatusLabel.swift` + one-line label swap in `VoiceInk.swift` — icon becomes
+      ⏺ while recording, a waveform while transcribing/enhancing. Built 17:00 →
+      `~/Downloads/VoiceInk.app`, confirmed live. Post-rebuild the hotkey was dead until the
+      Accessibility remove/re-add + relaunch — log signature: `[ShortcutMonitor] Failed to install
+      global shortcut event tap` at launch.)*
+- [x] Tune ASR choice for lowest latency on your machine. *(2026-07-08 pm: kept Parakeet-TDT v3 on
+      ANE. Prewarm was already ON (registered default — the earlier "enable it" finding was wrong,
+      see §7 correction); log-verified ~0.25 s prewarm at every launch. Measured from history: warm
+      ASR **median ≈ 0.13 s**/utterance, cleanup +0.26–0.82 s. Nothing further to tune.)*
+- [x] (Optional) Command words ("new line", "send it"), streaming/partial transcripts. *(2026-07-08 pm:
+      scoped, all **deferred by decision** — "send it" is small (trailing-phrase strip + one-shot
+      `autoSendKey`) but builds on Return-to-submit, which is still untested; "new line" and streaming
+      injection deferred per §7 findings. Revisit on request.)*
 
 ---
 
@@ -209,12 +222,18 @@ terminal, and **Auto-Send** can press Return to submit the prompt.
   sounds (ON by default, sound5/sound6, `SoundManager.swift:36-49`, Settings → Custom Sounds) both
   exist upstream. Only real gap: the menu-bar icon is static (`VoiceInk.swift:355-362`) — a
   recording-state badge would be a small optional Swift edit reacting to `VoiceInkEngine.recordingState`.
+  **Done 2026-07-08 pm:** badge added — new `Views/MenuBarStatusLabel.swift` + one-line label swap in
+  `VoiceInk.swift`; swift-reviewer verdict APPROVE-WITH-NITS, both actionable nits applied (fixed
+  16 pt symbol size to avoid state-change width jump; idle icon resizes a copy, not the shared
+  NSImage cache). Symbols render monochrome/template in the menu bar — intended.
 - **Latency: keep Parakeet-TDT v3 on ANE** (already active on both modes; only model on disk; VAD off /
-  16 kHz native / greedy decode already optimal). Best win: **enable `PrewarmModelOnWake`** (unset =
-  OFF today; gate `Services/ModelPrewarmService.swift:104`) — without it the ANE model loads lazily on
-  the *first* dictation. Per-utterance ASR compute time is persisted to SwiftData and shown in
-  History/Dashboard (`TranscriptionPipeline.swift:103-148`), not os_log — use it for a 5×-median
-  measurement of a fixed 10-word sentence, warm.
+  16 kHz native / greedy decode already optimal). ~~Best win: enable `PrewarmModelOnWake`~~ **Correction
+  (2026-07-08 pm):** prewarm is **already ON** — `AppDefaults.swift:64` registers the default `true`
+  (registered defaults don't appear in `defaults read`, which is what misled the fan-out agent);
+  unified log confirms "Prewarm completed in ~0.25s" on every app launch. **Measured baseline
+  (2026-07-08, from the SwiftData history at `~/Library/Application Support/com.prakashjoshipax.VoiceInk/default.store`):**
+  14 utterances, warm Parakeet V3 ASR = **median ≈ 0.13 s** (0.10–0.18 s for ≤10 s audio; 0.24 s for a
+  40 s utterance); Ollama cleanup adds 0.26–0.82 s when it runs. Nothing further to tune.
 - **Command words (all optional):** "send it" is small + safe — auto-send already works in type-out
   mode (`Modes/ModeConfig.swift:47-49`: `usesPasteOptions` includes `.typeOut`; keystroke path
   `CursorPaster.performAutoSend` at `CursorPaster.swift:279-300`); needs only trailing-phrase strip +
