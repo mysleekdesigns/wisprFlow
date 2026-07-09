@@ -75,6 +75,7 @@ claude_mode = {
     "selectedAIModel": "wispr-cleanup:latest",
     "outputMode": "typeOut",
     "autoSendKey": "none",
+    "isSendItCommandEnabled": True,
     "isEnabled": True,
     "isDefault": False,
 }

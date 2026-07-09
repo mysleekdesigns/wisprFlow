@@ -167,9 +167,12 @@ terminal, and **Auto-Send** can press Return to submit the prompt.
       see §7 correction); log-verified ~0.25 s prewarm at every launch. Measured from history: warm
       ASR **median ≈ 0.13 s**/utterance, cleanup +0.26–0.82 s. Nothing further to tune.)*
 - [x] (Optional) Command words ("new line", "send it"), streaming/partial transcripts. *(2026-07-08 pm:
-      scoped, all **deferred by decision** — "send it" is small (trailing-phrase strip + one-shot
-      `autoSendKey`) but builds on Return-to-submit, which is still untested; "new line" and streaming
-      injection deferred per §7 findings. Revisit on request.)*
+      scoped; "new line" and streaming injection **deferred by decision** per §7 findings. 2026-07-08 eve:
+      **"send it" implemented** — trailing-phrase strip in `TranscriptionPipeline` (pre-enhancement, so the
+      cleanup LLM never sees it and history stays clean) + one-shot Return in `TranscriptionDelivery`;
+      per-mode toggle `isSendItCommandEnabled` (default off, ON for the Claude Code profile; restore script
+      updated). Bare "send it" types nothing and submits the already-typed prompt. Whitespace boundary
+      rejects "re-send it"/"resend it". 12 unit tests green; live-verified end-to-end via history DB.)*
 
 ---
 
@@ -239,10 +242,11 @@ terminal, and **Auto-Send** can press Return to submit the prompt.
   (2026-07-08, from the SwiftData history at `~/Library/Application Support/com.prakashjoshipax.VoiceInk/default.store`):**
   14 utterances, warm Parakeet V3 ASR = **median ≈ 0.13 s** (0.10–0.18 s for ≤10 s audio; 0.24 s for a
   40 s utterance); Ollama cleanup adds 0.26–0.82 s when it runs. Nothing further to tune.
-- **Command words (all optional):** "send it" is small + safe — auto-send already works in type-out
-  mode (`Modes/ModeConfig.swift:47-49`: `usesPasteOptions` includes `.typeOut`; keystroke path
-  `CursorPaster.performAutoSend` at `CursorPaster.swift:279-300`); needs only trailing-phrase strip +
-  a one-shot `autoSendKey` override. "new line" **deferred**: the only terminal-agnostic soft newline
+- **Command words (all optional):** "send it" **implemented 2026-07-08** (see §6) — detector at
+  `Transcription/Processing/SendItCommandDetector.swift`, strip wired into `TranscriptionPipeline`
+  after word-replacement / before enhancement, one-shot Return via the existing keystroke path
+  (`CursorPaster.performAutoSend` at `CursorPaster.swift:279-300`); empty-remainder delivery skips
+  injection entirely (no clipboard clobber in paste modes). "new line" **deferred**: the only terminal-agnostic soft newline
   is backslash+Return (Shift/Option+Return are terminal-keymap-dependent), and every variant posts a
   real Return — a misfire submits the TUI prompt. Streaming injection **deferred** (large): local
   partials already exist (`Transcription/Streaming/FluidAudioStreamingProvider.swift`, Parakeet only)
